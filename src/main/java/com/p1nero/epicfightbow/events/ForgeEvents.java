@@ -16,10 +16,13 @@ import yesman.epicfight.world.capabilities.entitypatch.LivingEntityPatch;
 @Mod.EventBusSubscriber(modid = EpicFightBowMod.MOD_ID)
 public class ForgeEvents {
 
+    /**
+     * 防止攻击的时候可以拉弓，太抽象了
+     */
     @SubscribeEvent
     public static void startUsing(LivingEntityUseItemEvent.Start event) {
         LivingEntityPatch<?> livingEntityPatch = EpicFightCapabilities.getEntityPatch(event.getEntity(), LivingEntityPatch.class);
-        if (livingEntityPatch != null && livingEntityPatch.getEntityState().inaction()) {
+        if (livingEntityPatch != null && livingEntityPatch.isLogicalClient() && livingEntityPatch.getEntityState().inaction()) {
             event.setCanceled(true);
         }
     }

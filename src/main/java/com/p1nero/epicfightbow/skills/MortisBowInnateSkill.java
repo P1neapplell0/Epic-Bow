@@ -16,7 +16,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import yesman.epicfight.api.animation.AnimationManager;
 import yesman.epicfight.api.animation.property.AnimationProperty;
-import yesman.epicfight.api.animation.types.StaticAnimation;
+import yesman.epicfight.api.animation.types.MainFrameAnimation;
 import yesman.epicfight.client.input.EpicFightKeyMappings;
 import yesman.epicfight.skill.*;
 import yesman.epicfight.skill.weaponinnate.WeaponInnateSkill;
@@ -113,7 +113,7 @@ public class MortisBowInnateSkill extends WeaponInnateSkill {
         }
     }
 
-    private void playAnim(SkillContainer basicAttackContainer, AnimationManager.AnimationAccessor<? extends StaticAnimation> accessor) {
+    private void playAnim(SkillContainer basicAttackContainer, AnimationManager.AnimationAccessor<? extends MainFrameAnimation> accessor) {
         basicAttackContainer.getExecutor().playAnimationSynchronized(accessor, 0.15F);
         BasicAttack.setComboCounterWithEvent(ComboCounterHandleEvent.Causal.ANOTHER_ACTION_ANIMATION, basicAttackContainer.getServerExecutor(), basicAttackContainer, accessor, 0);
     }

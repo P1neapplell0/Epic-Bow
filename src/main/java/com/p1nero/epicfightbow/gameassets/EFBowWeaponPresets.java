@@ -28,8 +28,6 @@ public class EFBowWeaponPresets {
     public static final Function<Item, CapabilityItem.Builder> MORTIS =
             (item) -> RangedWeaponCapability.builder()
                     .zoomInType(CapabilityItem.ZoomInType.USE_TICK)
-                    .addAnimationsModifier(LivingMotions.IDLE, Animations.BIPED_IDLE)
-                    .addAnimationsModifier(LivingMotions.WALK, Animations.BIPED_WALK)
                     .addAnimationsModifier(LivingMotions.RUN, EFBowAnimations.BOW_RUN)
                     .addAnimationsModifier(LivingMotions.CHASE, EFBowAnimations.BOW_RUN)
                     .addAnimationsModifier(LivingMotions.AIM, Animations.BIPED_BOW_AIM)
