@@ -13,7 +13,10 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.AbstractArrow;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.ArrowItem;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -32,10 +35,12 @@ import yesman.epicfight.api.utils.math.OpenMatrix4f;
 import yesman.epicfight.api.utils.math.ValueModifier;
 import yesman.epicfight.api.utils.math.Vec3f;
 import yesman.epicfight.gameasset.Armatures;
+import yesman.epicfight.world.capabilities.EpicFightCapabilities;
 import yesman.epicfight.world.capabilities.entitypatch.LivingEntityPatch;
+import yesman.epicfight.world.capabilities.entitypatch.player.ServerPlayerPatch;
 import yesman.epicfight.world.damagesource.StunType;
 
-@EventBusSubscriber(modid = EpicFightBowMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = EpicFightBowMod.MOD_ID)
 public class EFBowAnimations {
     public static AnimationManager.AnimationAccessor<MovementAnimation> BOW_RUN;
     public static AnimationManager.AnimationAccessor<ScanAttackAnimation> BOW_AUTO1;
@@ -187,34 +192,24 @@ public class EFBowAnimations {
                                    LivingEntity target, float speed, float power) {
         ArrowItem arrowItem = ammoStack.getItem() instanceof ArrowItem arrow ? arrow : (ArrowItem) Items.ARROW;
         AbstractArrow abstractArrow = arrowItem.createArrow(player.level(), ammoStack, player, weaponStack);
-
-        Vec3 baseAimDirection = target == null ? getPlayerAimDirection(player) : getTargetAimDirection(player, target);
-        Vec3 spawnPos = getArrowSpawnPosition(player, baseAimDirection);
-        Vec3 shotDirection = target == null ? baseAimDirection.normalize() : target.getEyePosition().subtract(spawnPos).normalize();
-
+        abstractArrow = bowItem.customArrow(abstractArrow, ammoStack, weaponStack);
+        ServerPlayerPatch serverPlayerPatch = EpicFightCapabilities.getEntityPatch(player, ServerPlayerPatch.class);
+        Vec3 spawnPos = getJointWorldPos(serverPlayerPatch, Armatures.BIPED.get().toolL);
         abstractArrow.setPos(spawnPos);
-        abstractArrow.shoot(shotDirection.x, shotDirection.y, shotDirection.z, speed, 0.0F);
+        if(target == null) {
+            abstractArrow.shootFromRotation(player, player.getXRot(), serverPlayerPatch.getYRot(), 0.0F, 3.0F, 1.0F);
+        } else {
+            Vec3 shotDirection = target.getEyePosition().subtract(spawnPos);
+            abstractArrow.shoot(shotDirection.x, shotDirection.y, shotDirection.z, speed, 0.0F);
+        }
         if (power == 1.0F) {
             abstractArrow.setCritArrow(true);
         }
         if (!shouldConsumeAmmo(player, weaponStack, ammoStack)) {
             abstractArrow.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
         }
-
         player.level().addFreshEntity(abstractArrow);
-    }
 
-    private static Vec3 getPlayerAimDirection(ServerPlayer player) {
-        return Vec3.directionFromRotation(player.getViewXRot(1.0F), player.getViewYRot(1.0F));
-    }
-
-    private static Vec3 getTargetAimDirection(ServerPlayer player, LivingEntity target) {
-        return target.getEyePosition().subtract(player.getEyePosition()).normalize();
-    }
-
-    private static Vec3 getArrowSpawnPosition(ServerPlayer player, Vec3 aimDirection) {
-        Vec3 normalizedDirection = aimDirection.normalize();
-        return player.getEyePosition().add(normalizedDirection.scale(0.45D)).add(0.0D, -0.15D, 0.0D);
     }
 
     private static void damageBow(ServerPlayer player, ItemStack weaponStack) {

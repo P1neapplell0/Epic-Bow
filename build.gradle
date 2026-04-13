@@ -1,7 +1,7 @@
 plugins {
     id 'eclipse'
     id 'idea'
-    id 'net.neoforged.moddev' version '2.0.115'
+    id 'net.neoforged.moddev' version '2.0.95'
 }
 
 version = mod_version
@@ -21,6 +21,11 @@ println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty '
 
 neoForge {
     version = project.neo_version
+
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
 
     runs {
         client {
@@ -58,23 +63,18 @@ neoForge {
 }
 
 repositories {
+
+    exclusiveContent {
+        forRepository { maven { name = "Modrinth"; url = "https://api.modrinth.com/maven" } }
+        filter { includeGroup "maven.modrinth" }
+    }
     mavenCentral()
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-configurations {
-    runtimeClasspath.extendsFrom localRuntime
-}
-
-def epicFightJar = file('../epic-fight-21.16.1-mc1.21.1-neoforge.jar')
-def localLibs = fileTree(dir: 'libs', include: ['*.jar'])
-
 dependencies {
-    compileOnly files(epicFightJar)
-    localRuntime files(epicFightJar)
-
-    localRuntime localLibs
+    implementation "maven.modrinth:epic-fight:${project.epicfight_version}"
 }
 
 var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {

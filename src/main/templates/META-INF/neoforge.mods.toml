@@ -1,7 +1,7 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
-
+icon="bow cover.png"
 [[mixins]]
 config="${mod_id}.mixins.json"
 
@@ -11,6 +11,7 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="${mod_authors}"
 description='''${mod_description}'''
+logoFile="bow cover.png"
 
 [[dependencies.${mod_id}]]
 modId="neoforge"
@@ -23,12 +24,12 @@ side="BOTH"
 modId="minecraft"
 type="required"
 versionRange="${minecraft_version_range}"
-ordering="NONE"
+ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="epicfight"
 type="required"
 versionRange="${epicfight_version_range}"
-ordering="NONE"
+ordering="AFTER"
 side="BOTH"
