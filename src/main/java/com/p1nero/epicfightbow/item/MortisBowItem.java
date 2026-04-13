@@ -12,9 +12,13 @@ public class MortisBowItem extends BowItem {
         super(properties);
     }
 
+    public void releaseUsingSingleShot(@NotNull ItemStack itemStack, @NotNull Level level, @NotNull LivingEntity livingEntity, int remainTime) {
+        super.releaseUsing(itemStack, level, livingEntity, remainTime);
+    }
+
     @Override
     public void releaseUsing(@NotNull ItemStack itemStack, @NotNull Level level, @NotNull LivingEntity livingEntity, int remainTime) {
-        if(livingEntity.hasEffect(EFBowEffects.DOUBLE_ARROW.get())) {
+        if (livingEntity.hasEffect(EFBowEffects.DOUBLE_ARROW)) {
             super.releaseUsing(itemStack, level, livingEntity, remainTime);
         }
         super.releaseUsing(itemStack, level, livingEntity, remainTime);
