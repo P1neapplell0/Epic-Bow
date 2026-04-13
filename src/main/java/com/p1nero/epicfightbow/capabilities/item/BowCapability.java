@@ -9,12 +9,11 @@ import yesman.epicfight.api.animation.LivingMotion;
 import yesman.epicfight.api.animation.LivingMotions;
 import yesman.epicfight.api.animation.types.AttackAnimation;
 import yesman.epicfight.gameasset.Animations;
-import yesman.epicfight.gameasset.EpicFightSounds;
-import yesman.epicfight.particle.EpicFightParticles;
 import yesman.epicfight.particle.HitParticleType;
+import yesman.epicfight.registry.entries.EpicFightParticles;
+import yesman.epicfight.registry.entries.EpicFightSounds;
 import yesman.epicfight.world.capabilities.entitypatch.LivingEntityPatch;
 import yesman.epicfight.world.capabilities.entitypatch.player.PlayerPatch;
-import yesman.epicfight.world.capabilities.item.CapabilityItem;
 import yesman.epicfight.world.capabilities.item.RangedWeaponCapability;
 import yesman.epicfight.world.capabilities.item.Style;
 
@@ -24,7 +23,7 @@ public class BowCapability extends RangedWeaponCapability {
     private final List<AnimationManager.AnimationAccessor<? extends AttackAnimation>> attackMotion;
     private final List<AnimationManager.AnimationAccessor<? extends AttackAnimation>> mountAttackMotion;
 
-    public BowCapability(CapabilityItem.Builder builder) {
+    public BowCapability(RangedWeaponCapability.Builder builder) {
         super(builder);
         this.attackMotion = List.of(EFBowAnimations.BOW_AUTO1, EFBowAnimations.BOW_AUTO2, EFBowAnimations.BOW_DASH_ATTACK, EFBowAnimations.BOW_JUMP_ATTACK);
         this.mountAttackMotion = List.of(Animations.SWORD_MOUNT_ATTACK);

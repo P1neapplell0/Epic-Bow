@@ -2,22 +2,26 @@ package com.p1nero.epicfightbow.gameassets;
 
 import com.p1nero.epicfightbow.EpicFightBowMod;
 import com.p1nero.epicfightbow.animations.ScanAttackAnimation;
+import com.p1nero.epicfightbow.item.EFBowItemState;
 import com.p1nero.epicfightbow.mob_effect.EFBowEffects;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.EventHooks;
 import yesman.epicfight.api.animation.AnimationManager;
 import yesman.epicfight.api.animation.Joint;
 import yesman.epicfight.api.animation.property.AnimationEvent;
@@ -31,7 +35,7 @@ import yesman.epicfight.gameasset.Armatures;
 import yesman.epicfight.world.capabilities.entitypatch.LivingEntityPatch;
 import yesman.epicfight.world.damagesource.StunType;
 
-@Mod.EventBusSubscriber(modid = EpicFightBowMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = EpicFightBowMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class EFBowAnimations {
     public static AnimationManager.AnimationAccessor<MovementAnimation> BOW_RUN;
     public static AnimationManager.AnimationAccessor<ScanAttackAnimation> BOW_AUTO1;
@@ -100,7 +104,7 @@ public class EFBowAnimations {
 
     public static AnimationEvent.InTimeEvent<?> setFullBowUseTime(float time) {
         return AnimationEvent.InTimeEvent.create(time, (livingEntityPatch, assetAccessor, animationParameters) -> {
-            livingEntityPatch.getOriginal().getMainHandItem().getOrCreateTag().putBoolean("is_full", true);
+            EFBowItemState.setFull(livingEntityPatch.getOriginal().getMainHandItem(), true);
         }, AnimationEvent.Side.CLIENT);
     }
     /**
@@ -108,7 +112,7 @@ public class EFBowAnimations {
      */
     public static AnimationEvent.InTimeEvent<?> shootIn(float time) {
         return AnimationEvent.InTimeEvent.create(time, ((livingEntityPatch, assetAccessor, animationParameters) -> {
-            int loopTime = livingEntityPatch.getOriginal().hasEffect(EFBowEffects.DOUBLE_ARROW.get()) ? 2 : 1;
+            int loopTime = livingEntityPatch.getOriginal().hasEffect(EFBowEffects.DOUBLE_ARROW) ? 2 : 1;
             for(int i = 0; i < loopTime; i++) {
                 shootOnce(livingEntityPatch, 3.0F + i * 0.3F);
             }
@@ -119,86 +123,102 @@ public class EFBowAnimations {
     private static void shootOnce(LivingEntityPatch<?> livingEntityPatch) {
         shootOnce(livingEntityPatch, 3.0F);
     }
+
     private static void shootOnce(LivingEntityPatch<?> livingEntityPatch, float speed) {
         LivingEntity living = livingEntityPatch.getOriginal();
         ItemStack itemStack = living.getMainHandItem();
-        itemStack.getOrCreateTag().putBoolean("is_full", false);
-        Item item = itemStack.getItem();
+        EFBowItemState.setFull(itemStack, false);
         Level level = living.level();
-        int leftTime = 0;
-        if (livingEntityPatch.getOriginal() instanceof ServerPlayer player && item instanceof BowItem bowItem) {
-            boolean flag = player.getAbilities().instabuild || EnchantmentHelper.getItemEnchantmentLevel(Enchantments.INFINITY_ARROWS, itemStack) > 0;
-            ItemStack itemstack = player.getProjectile(itemStack);
+        if (!(living instanceof ServerPlayer player) || !(itemStack.getItem() instanceof BowItem bowItem)) {
+            return;
+        }
 
-            int i = item.getUseDuration(itemStack) - leftTime;
-            i = net.minecraftforge.event.ForgeEventFactory.onArrowLoose(itemStack, level, player, i, !itemstack.isEmpty() || flag);
-            if (i < 0) return;
+        ItemStack ammoStack = player.getProjectile(itemStack);
+        boolean hasInfiniteAmmo = hasInfiniteAmmo(player, itemStack);
+        if (ammoStack.isEmpty() && !hasInfiniteAmmo) {
+            return;
+        }
 
-            if (!itemstack.isEmpty() || flag) {
-                if (itemstack.isEmpty()) {
-                    itemstack = new ItemStack(Items.ARROW);
-                }
+        int charge = EventHooks.onArrowLoose(itemStack, level, player, 20, !ammoStack.isEmpty());
+        if (charge < 0) {
+            return;
+        }
 
-//                    float f = getPowerForTime(i);
-                float f = 1.0F;
-                boolean flag1 = player.getAbilities().instabuild || (itemstack.getItem() instanceof ArrowItem && ((ArrowItem) itemstack.getItem()).isInfinite(itemstack, itemStack, player));
-                if (!level.isClientSide) {
-                    ArrowItem arrowitem = (ArrowItem)(itemstack.getItem() instanceof ArrowItem ? itemstack.getItem() : Items.ARROW);
-                    AbstractArrow abstractarrow = arrowitem.createArrow(level, itemstack, player);
-                    abstractarrow = bowItem.customArrow(abstractarrow);
-                    abstractarrow.setPos(getJointWorldPos(livingEntityPatch, Armatures.BIPED.get().handL));
-                    LivingEntity target = ScanAttackAnimation.getTarget(livingEntityPatch);
-                    if(target == null) {
-                        abstractarrow.shootFromRotation(player, living.getXRot(), livingEntityPatch.getYRot(), 0.0F, f * 3.0F, 1.0F);
-                    } else {
-                        Vec3 targetPos = target.getEyePosition();
-                        Vec3 vec3 = targetPos.subtract(abstractarrow.position()).normalize().scale(speed * f);
-                        abstractarrow.setDeltaMovement(vec3);
-                        double d0 = vec3.horizontalDistance();
-                        abstractarrow.setYRot((float)(Mth.atan2(vec3.x, vec3.z) * (double)(180F / (float)Math.PI)));
-                        abstractarrow.setXRot((float)(Mth.atan2(vec3.y, d0) * (double)(180F / (float)Math.PI)));
-                        abstractarrow.yRotO = abstractarrow.getYRot();
-                        abstractarrow.xRotO = abstractarrow.getXRot();
-                    }
-                    if (f == 1.0F) {
-                        abstractarrow.setCritArrow(true);
-                    }
+        float power = BowItem.getPowerForTime(charge);
+        if (power < 0.1F) {
+            return;
+        }
 
-                    int j = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.POWER_ARROWS, itemStack);
-                    if (j > 0) {
-                        abstractarrow.setBaseDamage(abstractarrow.getBaseDamage() + (double)j * 0.5D + 0.5D);
-                    }
+        LivingEntity target = ScanAttackAnimation.getTarget(livingEntityPatch);
+        ItemStack ammoToFire = ammoStack.isEmpty() ? new ItemStack(Items.ARROW) : ammoStack;
+        if (!level.isClientSide()) {
+            shootArrow(player, bowItem, itemStack, ammoToFire, target, speed * power, power);
+        }
 
-                    int k = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.PUNCH_ARROWS, itemStack);
-                    if (k > 0) {
-                        abstractarrow.setKnockback(k);
-                    }
-
-                    if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.FLAMING_ARROWS, itemStack) > 0) {
-                        abstractarrow.setSecondsOnFire(100);
-                    }
-
-                    itemStack.hurtAndBreak(1, player, (p_289501_) -> {
-                        p_289501_.broadcastBreakEvent(player.getUsedItemHand());
-                    });
-                    if (flag1 || player.getAbilities().instabuild && (itemstack.is(Items.SPECTRAL_ARROW) || itemstack.is(Items.TIPPED_ARROW))) {
-                        abstractarrow.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
-                    }
-
-                    level.addFreshEntity(abstractarrow);
-                }
-
-                level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 1.0F, 1.0F / (level.getRandom().nextFloat() * 0.4F + 1.2F) + f * 0.5F);
-                if (!flag1 && !player.getAbilities().instabuild) {
-                    itemstack.shrink(1);
-                    if (itemstack.isEmpty()) {
-                        player.getInventory().removeItem(itemstack);
-                    }
-                }
-
-                player.awardStat(Stats.ITEM_USED.get(bowItem));
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS,
+                1.0F, 1.0F / (level.getRandom().nextFloat() * 0.4F + 1.2F) + power * 0.5F);
+        damageBow(player, itemStack);
+        if (shouldConsumeAmmo(player, itemStack, ammoToFire)) {
+            ammoToFire.shrink(1);
+            if (ammoToFire.isEmpty()) {
+                player.getInventory().removeItem(ammoToFire);
             }
         }
+        player.awardStat(Stats.ITEM_USED.get(bowItem));
+    }
+
+    private static boolean hasInfiniteAmmo(ServerPlayer player, ItemStack weaponStack) {
+        if (player.hasInfiniteMaterials()) {
+            return true;
+        }
+
+        HolderLookup.RegistryLookup<Enchantment> enchantments = player.serverLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        return EnchantmentHelper.getItemEnchantmentLevel(enchantments.getOrThrow(Enchantments.INFINITY), weaponStack) > 0;
+    }
+
+    private static boolean shouldConsumeAmmo(ServerPlayer player, ItemStack weaponStack, ItemStack ammoStack) {
+        if (player.hasInfiniteMaterials()) {
+            return false;
+        }
+        return !(ammoStack.is(Items.ARROW) && hasInfiniteAmmo(player, weaponStack));
+    }
+
+    private static void shootArrow(ServerPlayer player, BowItem bowItem, ItemStack weaponStack, ItemStack ammoStack,
+                                   LivingEntity target, float speed, float power) {
+        ArrowItem arrowItem = ammoStack.getItem() instanceof ArrowItem arrow ? arrow : (ArrowItem) Items.ARROW;
+        AbstractArrow abstractArrow = arrowItem.createArrow(player.level(), ammoStack, player, weaponStack);
+
+        Vec3 baseAimDirection = target == null ? getPlayerAimDirection(player) : getTargetAimDirection(player, target);
+        Vec3 spawnPos = getArrowSpawnPosition(player, baseAimDirection);
+        Vec3 shotDirection = target == null ? baseAimDirection.normalize() : target.getEyePosition().subtract(spawnPos).normalize();
+
+        abstractArrow.setPos(spawnPos);
+        abstractArrow.shoot(shotDirection.x, shotDirection.y, shotDirection.z, speed, 0.0F);
+        if (power == 1.0F) {
+            abstractArrow.setCritArrow(true);
+        }
+        if (!shouldConsumeAmmo(player, weaponStack, ammoStack)) {
+            abstractArrow.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
+        }
+
+        player.level().addFreshEntity(abstractArrow);
+    }
+
+    private static Vec3 getPlayerAimDirection(ServerPlayer player) {
+        return Vec3.directionFromRotation(player.getViewXRot(1.0F), player.getViewYRot(1.0F));
+    }
+
+    private static Vec3 getTargetAimDirection(ServerPlayer player, LivingEntity target) {
+        return target.getEyePosition().subtract(player.getEyePosition()).normalize();
+    }
+
+    private static Vec3 getArrowSpawnPosition(ServerPlayer player, Vec3 aimDirection) {
+        Vec3 normalizedDirection = aimDirection.normalize();
+        return player.getEyePosition().add(normalizedDirection.scale(0.45D)).add(0.0D, -0.15D, 0.0D);
+    }
+
+    private static void damageBow(ServerPlayer player, ItemStack weaponStack) {
+        weaponStack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(InteractionHand.MAIN_HAND));
     }
 
     public static Vec3 getJointWorldPos(LivingEntityPatch<?> entityPatch, Joint joint) {
