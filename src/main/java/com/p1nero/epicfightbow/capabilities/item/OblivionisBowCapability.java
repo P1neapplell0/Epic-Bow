@@ -14,13 +14,12 @@ import yesman.epicfight.api.animation.types.AttackAnimation;
 import yesman.epicfight.api.collider.Collider;
 import yesman.epicfight.gameasset.Animations;
 import yesman.epicfight.gameasset.ColliderPreset;
-import yesman.epicfight.gameasset.EpicFightSounds;
-import yesman.epicfight.particle.EpicFightParticles;
 import yesman.epicfight.particle.HitParticleType;
+import yesman.epicfight.registry.entries.EpicFightParticles;
+import yesman.epicfight.registry.entries.EpicFightSounds;
 import yesman.epicfight.skill.Skill;
 import yesman.epicfight.world.capabilities.entitypatch.LivingEntityPatch;
 import yesman.epicfight.world.capabilities.entitypatch.player.PlayerPatch;
-import yesman.epicfight.world.capabilities.item.CapabilityItem;
 import yesman.epicfight.world.capabilities.item.RangedWeaponCapability;
 import yesman.epicfight.world.capabilities.item.Style;
 
@@ -31,7 +30,7 @@ public class OblivionisBowCapability extends RangedWeaponCapability {
     private final List<AnimationManager.AnimationAccessor<? extends AttackAnimation>> attackMotionDagger;
     private final List<AnimationManager.AnimationAccessor<? extends AttackAnimation>> mountAttackMotion;
 
-    public OblivionisBowCapability(CapabilityItem.Builder builder) {
+    public OblivionisBowCapability(RangedWeaponCapability.Builder builder) {
         super(builder);
         this.attackMotionBow = List.of(EFBowAnimations.BOW_AUTO1, EFBowAnimations.BOW_AUTO2, EFBowAnimations.BOW_AUTO3, EFBowAnimations.BOW_DASH_ATTACK, EFBowAnimations.BOW_JUMP_ATTACK);
         this.attackMotionDagger = List.of(Animations.DAGGER_DUAL_AUTO1, Animations.DAGGER_DUAL_AUTO2, Animations.DAGGER_DUAL_AUTO3, Animations.DAGGER_DUAL_DASH, Animations.DAGGER_DUAL_AIR_SLASH);
@@ -71,6 +70,6 @@ public class OblivionisBowCapability extends RangedWeaponCapability {
 
     @Override
     public @Nullable Skill getInnateSkill(PlayerPatch<?> playerpatch, ItemStack itemstack) {
-        return EFBowSkills.MORTIS_INNATE;
+        return EFBowSkills.MORTIS_INNATE.get();
     }
 }

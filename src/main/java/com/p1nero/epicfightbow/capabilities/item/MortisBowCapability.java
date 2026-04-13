@@ -14,13 +14,12 @@ import yesman.epicfight.api.animation.types.AttackAnimation;
 import yesman.epicfight.api.collider.Collider;
 import yesman.epicfight.gameasset.Animations;
 import yesman.epicfight.gameasset.ColliderPreset;
-import yesman.epicfight.gameasset.EpicFightSounds;
-import yesman.epicfight.particle.EpicFightParticles;
 import yesman.epicfight.particle.HitParticleType;
+import yesman.epicfight.registry.entries.EpicFightParticles;
+import yesman.epicfight.registry.entries.EpicFightSounds;
 import yesman.epicfight.skill.Skill;
 import yesman.epicfight.world.capabilities.entitypatch.LivingEntityPatch;
 import yesman.epicfight.world.capabilities.entitypatch.player.PlayerPatch;
-import yesman.epicfight.world.capabilities.item.CapabilityItem;
 import yesman.epicfight.world.capabilities.item.RangedWeaponCapability;
 import yesman.epicfight.world.capabilities.item.Style;
 
@@ -30,7 +29,7 @@ public class MortisBowCapability extends RangedWeaponCapability {
     private final List<AnimationManager.AnimationAccessor<? extends AttackAnimation>> attackMotion;
     private final List<AnimationManager.AnimationAccessor<? extends AttackAnimation>> mountAttackMotion;
 
-    public MortisBowCapability(CapabilityItem.Builder builder) {
+    public MortisBowCapability(RangedWeaponCapability.Builder builder) {
         super(builder);
         this.attackMotion = List.of(EFBowAnimations.BOW_AUTO1, EFBowAnimations.BOW_AUTO2, EFBowAnimations.BOW_AUTO3, EFBowAnimations.BOW_DASH_ATTACK, EFBowAnimations.BOW_JUMP_ATTACK);
         this.mountAttackMotion = List.of(Animations.SWORD_MOUNT_ATTACK);
@@ -68,6 +67,6 @@ public class MortisBowCapability extends RangedWeaponCapability {
 
     @Override
     public @Nullable Skill getInnateSkill(PlayerPatch<?> playerpatch, ItemStack itemstack) {
-        return EFBowSkills.MORTIS_INNATE;
+        return EFBowSkills.MORTIS_INNATE.get();
     }
 }
