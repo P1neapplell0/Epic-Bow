@@ -4,7 +4,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.entity.PartEntity;
+import net.neoforged.neoforge.entity.PartEntity;
 import org.jetbrains.annotations.Nullable;
 import yesman.epicfight.api.animation.AnimationManager;
 import yesman.epicfight.api.animation.AnimationPlayer;
@@ -123,7 +123,7 @@ public class ScanAttackAnimation extends AttackAnimation {
             while(hitEntities.next()) {
                 Entity target = hitEntities.getEntity();
                 LivingEntity trueEntity = this.getTrueEntity(target);
-                if (trueEntity != null && trueEntity.isAlive() && !entityPatch.getCurrentlyAttackTriedEntities().contains(trueEntity) && !entityPatch.isTargetInvulnerable(target) && (target instanceof LivingEntity || target instanceof PartEntity) && entity.hasLineOfSight(target)) {
+                if (trueEntity != null && trueEntity.isAlive() && !entityPatch.getCurrentlyAttackTriedEntities().contains(trueEntity) && !entityPatch.isTargetInvulnerable(target) && (target instanceof LivingEntity || target instanceof PartEntity<?>) && entity.hasLineOfSight(target)) {
                     entityPatch.getCurrentlyAttackTriedEntities().add(trueEntity);
                     entityPatch.getCurrentlyAttackTriedEntities().sort((e1, e2) -> Float.compare(e1.distanceTo(entity), e2.distanceTo(entity)));
                 }
